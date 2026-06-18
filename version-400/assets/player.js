@@ -1,0 +1,57 @@
+(function () {
+    window.initMoviePlayer = function (source) {
+        var video = document.querySelector('[data-player-video]');
+        var overlay = document.querySelector('[data-player-overlay]');
+        var started = false;
+        var hls = null;
+
+        if (!video || !source) {
+            return;
+        }
+
+        function loadSource() {
+            if (started) {
+                return;
+            }
+            started = true;
+            if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = source;
+            } else if (window.Hls && window.Hls.isSupported()) {
+                hls = new window.Hls({ enableWorker: true });
+                hls.loadSource(source);
+                hls.attachMedia(video);
+            } else {
+                video.src = source;
+            }
+        }
+
+        function playVideo() {
+            loadSource();
+            if (overlay) {
+                overlay.classList.add('is-hidden');
+            }
+            video.controls = true;
+            var promise = video.play();
+            if (promise && promise.catch) {
+                promise.catch(function () {});
+            }
+        }
+
+        if (overlay) {
+            overlay.addEventListener('click', playVideo);
+        }
+
+        video.addEventListener('click', function () {
+            if (video.paused) {
+                playVideo();
+            }
+        });
+
+        window.addEventListener('pagehide', function () {
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+        });
+    };
+})();
